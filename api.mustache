@@ -1,5 +1,5 @@
 /// <reference path="api.d.ts" />
-import {Http, Headers, RequestOptionsArgs, Response} from 'angular2/http';
+import {Http, Headers, RequestOptions, Response, URLSearchParams} from 'angular2/http';
 import {Injectable} from 'angular2/core';
 import {Observable} from 'rxjs/Observable';
 import * as API from './api';
@@ -20,10 +20,8 @@ import * as API from './api';
   protected basePath = '{{basePath}}';
   public defaultHeaders : Headers = new Headers();
 
-  constructor(protected http: Http, basePath?: string) {
-  if (basePath) {
-  this.basePath = basePath;
-  }
+  constructor(protected http: Http) {
+
   }
 
   {{#operation}}
@@ -32,11 +30,11 @@ import * as API from './api';
       * {{notes}}
       {{#allParams}}* @param {{paramName}} {{description}}
       {{/allParams}}*/
-      public {{nickname}} ({{#allParams}}{{paramName}}{{^required}}?{{/required}}: {{{dataType}}}, {{/allParams}}extraHttpRequestParams?: any ) : Observable<API.I{{#returnType}}{{{.}}}{{/returnType}}{{^returnType}}{}{{/returnType}}> {
+      public {{nickname}} ({{#allParams}}{{paramName}}{{^required}}?{{/required}}: {{{dataType}}}, {{/allParams}}extraHttpRequestParams?: any ) : Observable<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}{}{{/returnType}}> {
       const path = this.basePath + '{{path}}'{{#pathParams}}
           .replace('{' + '{{baseName}}' + '}', String({{paramName}})){{/pathParams}};
 
-      let queryParameters: any = {};
+      let searchParams: URLSearchParams = new URLSearchParams();
       let headerParams = this.defaultHeaders;
       {{#hasFormParams}}
           let formParams: any = {};
@@ -52,36 +50,36 @@ import * as API from './api';
       {{/allParams}}
       {{#queryParams}}
           if ({{paramName}} !== undefined) {
-          queryParameters['{{baseName}}'] = {{paramName}};
-          }
+          searchParams.set('{{baseName}}', <string><any>{{paramName}});
+              }
 
       {{/queryParams}}
       {{#headerParams}}
-          headerParams.set('{{baseName}}', {{paramName }});
+              headerParams.set('{{baseName}}', {{paramName }});
 
       {{/headerParams}}
       {{#hasFormParams}}
-          headerParams.set('Content-Type', 'application/x-www-form-urlencoded');
+              headerParams.set('Content-Type', 'application/x-www-form-urlencoded');
 
       {{/hasFormParams}}
       {{#formParams}}
-          formParams['{{baseName}}'] = {{paramName}};
+              formParams['{{baseName}}'] = {{paramName}};
 
       {{/formParams}}
-      let requestOptions: RequestOptionsArgs = {
-      method: '{{httpMethod}}',
-      headers: headerParams,
-      search: queryParameters
-      };
+          let requestOptions: RequestOptions = new RequestOptions({
+          method: '{{httpMethod}}',
+          headers: headerParams,
+          search: searchParams
+          });
       {{#bodyParam}}
-          requestOptions.body = JSON.stringify({{paramName}});
+              requestOptions.body = JSON.stringify({{paramName}});
       {{/bodyParam}}
 
-      return this.http.request(path, requestOptions)
-      .map((response: Response) => {
-      return response.json();
-      });
-      }
+          return this.http.request(path, requestOptions)
+          .map((response: Response) => {
+          return response.json();
+          });
+          }
   {{/operation}}
-  }
+      }
 {{/operations}}
